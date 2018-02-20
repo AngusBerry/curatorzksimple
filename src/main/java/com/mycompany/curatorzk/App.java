@@ -12,13 +12,12 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 public class App{
 
     /**
-     * Expect Args "<zookeeper node name>" "<zookeeper property path beginning with forward slash>"
-     * e.g. "system" "/dev/db/host"
+     *
      */
     public static void main( String[] args ){
-        String nameSpace = args[0];
-        String propertyPath = args[1];
+        String nameSpace = "config";
         String zkhost="127.0.0.1:2181";//ZooKeeper host IP & port
+
         RetryPolicy rp=new ExponentialBackoffRetry(1000, 3);//Retry mechanism
         CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder().connectString(zkhost)
                 .connectionTimeoutMs(5000)
@@ -29,14 +28,26 @@ public class App{
         curatorClient.start();
 
         System.out.println();
-        System.out.println( "A simple test with Apache Curator reading a value from a localhost Zookeeper" );
-        System.out.println( "...looking for the value of " + nameSpace + propertyPath);
+        System.out.println( "A simple test with Apache Curator reading a value from a Zookeeper server, local or remote" );
+        System.out.println( "...looking for the value(s) in the top level node: " + nameSpace);
         System.out.println();
 
+        String bla;
+        String[] zkValues = {
+            "/spring-cloud-zookeeper-example/dbURL",
+            "/spring-cloud-zookeeper-example/dbUser",
+            "/spring-cloud-zookeeper-example/dbPassword",
+            "/spring-cloud-zookeeper-example/other/nestedproperty"
+        };
+
+
+        //loop through the String array above, retrieving the properties from Zookeeper
         try{
-            String data = new String(curatorClient.getData().forPath( propertyPath ),"gbk");
-            System.out.println("Property from ZooKeeper = " + data);
-            System.out.println();
+            String data = null;
+            for(int i=0; i<4; i++){
+                data = new String(curatorClient.getData().forPath( zkValues[i] ),"gbk");
+                System.out.println("Zookeeper property: " + nameSpace + zkValues[i] + " = " + data);
+            }
         }
         catch (Exception ex){
             System.out.println("exception trying to read: " + ex.toString());
